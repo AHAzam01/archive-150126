@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The 15/01 Archive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #000; color: #fff; height: 100vh; overflow: hidden; margin: 0; }
+        .serif { font-family: 'Playfair Display', serif; }
+        #bgVideoLoop { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0.6; transition: opacity 1.5s ease; }
+        .full-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; background: #000; }
+        .glass { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 2rem; }
+        .btn-action { padding: 1rem 2rem; border-radius: 99px; border: 1px solid rgba(255,255,255,0.2); text-transform: uppercase; font-size: 10px; letter-spacing: 3px; color: white; background: rgba(255,255,255,0.05); cursor: pointer; transition: all 0.3s ease; }
+        .btn-action:active { transform: scale(0.95); background: white; color: black; }
+        
+        /* Menu Hamburger */
+        #main-menu-btn { position: fixed; top: 30px; right: 30px; z-index: 400; cursor: pointer; display: none; }
+        #side-menu { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.98); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
+
+        /* Admin Style */
+        .admin-controls { position: fixed; bottom: 20px; right: 20px; z-index: 600; display: flex; flex-direction: column; gap: 8px; }
+        .admin-btn { background: rgba(127, 29, 29, 0.6); border: 1px solid #ef4444; color: white; font-size: 7px; padding: 6px 12px; border-radius: 4px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div id="admin-area" class="admin-controls hidden">
+        <button class="admin-btn" onclick="skipCountdown()">Admin: Skip Lock</button>
+        <button class="admin-btn !border-blue-500 !bg-blue-900/40" onclick="jumpTo(5)">Admin: Jump to Easter Egg</button>
+    </div>
+
+    <div id="main-menu-btn" onclick="toggleMenu()">
+        <div class="w-6 h-[0.5px] bg-white/50 mb-1.5"></div>
+        <div class="w-6 h-[0.5px] bg-white/50"></div>
+    </div>
+
+    <div id="side-menu">
+        <button onclick="toggleMenu()" class="absolute top-10 right-10 text-[10px] tracking-widest opacity-40">CLOSE</button>
+        <p class="serif italic text-xl mb-6 opacity-30 tracking-[0.5em]">NAVIGASI ARSIP</p>
+        <button onclick="jumpTo(1)" class="text-[10px] tracking-[0.4em] hover:text-white text-white/40 uppercase">00. The Map</button>
+        <button onclick="jumpTo(2)" class="text-[10px] tracking-[0.4em] hover:text-white text-white/40 uppercase">01. Fragmen I</button>
+        <button onclick="jumpTo(3)" class="text-[10px] tracking-[0.4em] hover:text-white text-white/40 uppercase">02. Fragmen II</button>
+        <button onclick="jumpTo(4)" class="text-[10px] tracking-[0.4em] hover:text-white text-white/40 uppercase">03. Skyhill Archive</button>
+        <button onclick="jumpTo(5)" class="text-[10px] tracking-[0.4em] hover:text-white text-white/40 uppercase">04. Easter Egg</button>
+    </div>
+
+    <div id="step-loading" class="full-screen">
+        <p class="serif italic text-2xl tracking-[0.5em] animate-pulse mb-8 uppercase text-center px-6">The 15/01 Archive</p>
+        <button id="btn-open-arsip" class="btn-action">Buka Arsip</button>
+    </div>
+
+    <div id="video-modal" class="full-screen hidden">
+        <div class="w-[85%] max-w-[380px] aspect-[9/16] bg-[#111] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
+            <video id="introVideo" playsinline style="width:100%; height:100%; object-fit:cover;">
+                <source src="video-intro.mp4" type="video/mp4">
+            </video>
+        </div>
+        <audio id="mainAudio" src="audio-final.mp3"></audio>
+        <button id="btn-play-trigger" class="btn-action bg-white !text-black font-bold mt-10">Mulai Intro</button>
+    </div>
+
+    <div id="app" class="hidden w-full h-full relative z-10 flex flex-col items-center px-6 pt-24 overflow-y-auto">
+        <video id="bgVideoLoop" loop muted playsinline><source src="video-intro.mp4" type="video/mp4"></video>
+
+        <div id="lock-screen" class="fixed inset-0 z-[150] bg-black flex flex-col items-center justify-center text-center px-10 hidden">
+            <p class="serif italic text-lg mb-4 opacity-50">Menuju 15 Januari...</p>
+            <div id="timer" class="serif text-4xl tracking-widest italic mb-2">00:00:00:00</div>
+        </div>
+
+        <div id="card-map" class="glass p-10 w-full max-w-sm text-center space-y-6">
+            <p class="text-[9px] opacity-40 uppercase tracking-widest">Archive Map</p>
+            <div class="w-full aspect-square bg-white/5 rounded-xl overflow-hidden border border-white/10">
+                <img src="map-image.png" alt="Map" class="w-full h-full object-cover opacity-60">
+            </div>
+            <p class="text-[10px] opacity-50 italic">"Semua perjalanan dimulai dari satu titik hening. Ikuti jejaknya."</p>
+            <button onclick="jumpTo(2)" class="btn-action w-full">Mulai Fragmen I</button>
+        </div>
+
+        <div id="card-mission-1" class="glass p-10 w-full max-w-sm text-center space-y-6 hidden">
+            <p class="text-[9px] opacity-40 uppercase tracking-widest">Fragmen I</p>
+            <h3 class="serif text-2xl italic">"Jiwa-jiwa Liar"</h3>
+            <p class="text-[10px] opacity-50 italic">Anjing raksasa berbulu abu-abu yang setia pada tuannya. Siapa namanya?</p>
+            <input type="text" id="pass-1" placeholder="ENTER CODE" class="w-full bg-transparent border-b border-white/20 py-3 text-center outline-none uppercase text-sm tracking-[0.3em]">
+            <button onclick="verify(1, 'SADAHARU')" class="btn-action w-full">Verifikasi</button>
+        </div>
+
+        <div id="card-mission-2" class="glass p-10 w-full max-w-sm text-center space-y-6 hidden">
+            <p class="text-[9px] opacity-40 uppercase tracking-widest">Fragmen II</p>
+            <h3 class="serif text-2xl italic">"Penyucian Hening"</h3>
+            <p class="text-[10px] opacity-50 italic">Kolam bertingkat paling jernih dan rileks di dunia Teyvat?</p>
+            <input type="text" id="pass-2" placeholder="L... P..." class="w-full bg-transparent border-b border-white/20 py-3 text-center outline-none uppercase text-sm tracking-[0.3em]">
+            <button onclick="verify(2, 'LUHUA POOL')" class="btn-action w-full">Verifikasi</button>
+        </div>
+
+        <div id="card-deep-talk" class="glass p-10 w-full max-w-sm text-center space-y-4 hidden">
+            <p class="text-[9px] opacity-40 uppercase tracking-widest">Skyhill Archive</p>
+            <p id="q-text" class="text-[10px] italic min-h-[60px]">Apa momen paling tenang hari ini?</p>
+            <button onclick="showSecretMessage()" class="block w-full text-[7px] tracking-[0.5em] text-white/10 hover:text-white/40 italic py-2">[ Protocol 16.01 ]</button>
+            <button id="btn-next-q" onclick="nextQuestion()" class="btn-action w-full">Kartu Berikutnya</button>
+        </div>
+
+        <div id="card-easter-egg" class="glass p-10 w-full max-w-sm text-center space-y-6 hidden">
+            <p class="text-[9px] text-yellow-500 uppercase tracking-widest">The Aftermath Echo</p>
+            <h3 class="serif text-2xl italic">"Sebuah Kenangan"</h3>
+            <div id="download-area" class="hidden space-y-4">
+                <a href="video-easter-egg.mp4" download class="btn-action w-full !bg-yellow-500 !text-black font-bold text-center block">Download Video</a>
+                <a href="https://instagram.com/vault" target="_blank" class="btn-action w-full !border-yellow-500 !text-yellow-500 text-center block">Visit Instagram</a>
+            </div>
+            <div id="waiting-area" class="text-[9px] opacity-30 tracking-widest italic leading-loose">
+                Data terenkripsi. Terbuka 16 Januari.
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-secret" class="full-screen hidden z-[300] bg-black/95 px-10 text-center">
+        <p class="text-[10px] tracking-widest opacity-60 leading-loose">
+            Buka tab terakhir besok pada <span class="text-white font-bold">16 Januari 2026</span>.
+        </p>
+        <button onclick="closeSecret()" class="mt-10 text-[8px] opacity-30 text-white">Tutup</button>
+    </div>
+
+    <script>
+        const introVideo = document.getElementById('introVideo');
+        const mainAudio = document.getElementById('mainAudio');
+        const bgVideo = document.getElementById('bgVideoLoop');
+        const targetDate = new Date("Jan 15, 2026 00:00:00").getTime();
+        const eggDate = new Date("Jan 16, 2026 00:00:00").getTime();
+        let currentFragment = 1; 
+        let qIdx = 0;
+        const qs = ["Apa momen paling tenang hari ini?", "Satu kata untuk perjalanan kita?", "Terima kasih sudah ada di sini."];
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const isAdmin = urlParams.get('mode') === 'admin';
+        if (isAdmin) document.getElementById('admin-area').classList.remove('hidden');
+
+        document.getElementById('btn-open-arsip').onclick = () => {
+            document.getElementById('step-loading').classList.add('hidden');
+            document.getElementById('video-modal').classList.remove('hidden');
+        };
+
+        document.getElementById('btn-play-trigger').onclick = function() {
+            this.style.display = 'none';
+            introVideo.play(); mainAudio.play();
+            introVideo.onended = () => skipIntro();
+        };
+
+        function skipIntro() {
+            document.getElementById('video-modal').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            document.getElementById('main-menu-btn').style.display = 'block';
+            bgVideo.play(); checkStatus();
+        }
+
+        function checkStatus() {
+            const now = new Date().getTime();
+            if (now < targetDate && !isAdmin) {
+                document.getElementById('lock-screen').classList.remove('hidden');
+                setInterval(updateTimer, 1000);
+            } else {
+                document.getElementById('lock-screen').style.display = 'none';
+                displayFragment(currentFragment);
+            }
+        }
+
+        function updateTimer() {
+            const diff = targetDate - new Date().getTime();
+            if (diff <= 0) { location.reload(); return; }
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            document.getElementById('timer').innerText = `${d}d ${h}h ${m}m ${s}s`;
+        }
+
+        function verify(id, code) {
+            if (document.getElementById('pass-' + id).value.toUpperCase().trim() === code) {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                currentFragment = id + 2; 
+                displayFragment(currentFragment);
+            } else { alert('Kode Salah'); }
+        }
+
+        function displayFragment(f) {
+            document.querySelectorAll('[id^="card-"]').forEach(el => el.classList.add('hidden'));
+            const cards = ['card-map', 'card-mission-1', 'card-mission-2', 'card-deep-talk', 'card-easter-egg'];
+            const target = cards[f-1];
+            if(document.getElementById(target)) document.getElementById(target).classList.remove('hidden');
+
+            const bgs = ['video-intro.mp4', 'video-intro.mp4', 'video-zoo.mp4', 'video-spa.mp4', 'video-spa.mp4'];
+            changeBg(bgs[f-1]);
+
+            if (f === 5) {
+                const now = new Date().getTime();
+                if (now >= eggDate || isAdmin) {
+                    document.getElementById('download-area').classList.remove('hidden');
+                    document.getElementById('waiting-area').classList.add('hidden');
+                }
+            }
+            currentFragment = f;
+        }
+
+        function nextQuestion() {
+            qIdx++;
+            if (qIdx < qs.length) { document.getElementById('q-text').innerText = qs[qIdx]; }
+            else {
+                document.getElementById('btn-next-q').innerText = "Buka Enkripsi Terakhir";
+                document.getElementById('btn-next-q').onclick = () => displayFragment(5);
+            }
+        }
+
+        function changeBg(src) { bgVideo.style.opacity = 0; setTimeout(() => { bgVideo.src = src; bgVideo.play(); bgVideo.style.opacity = 0.6; }, 1000); }
+        function toggleMenu() { const m = document.getElementById('side-menu'); m.style.display = (m.style.display === 'flex' ? 'none' : 'flex'); }
+        function jumpTo(f) { displayFragment(f); toggleMenu(); }
+        function skipCountdown() { document.getElementById('lock-screen').style.display = 'none'; displayFragment(1); }
+        function showSecretMessage() { document.getElementById('modal-secret').classList.remove('hidden'); }
+        function closeSecret() { document.getElementById('modal-secret').classList.add('hidden'); }
+    </script>
+</body>
+</html>
