@@ -114,7 +114,7 @@
                 <button id="btn-next-q" onclick="nextQuestion()" class="btn-action w-full">Lanjut</button>
                 <div id="pay-hint" class="hidden text-center">
                     <button id="btn-pay-easter" onclick="unlockEaster()" class="btn-action w-full !bg-purple-600 !border-none font-bold">Unlock Memory (2000 ✦)</button>
-                    <p id="unlock-date-hint" class="text-[8px] opacity-40 mt-3 tracking-[0.2em] uppercase italic">Terbuka dikala kita usai (16 Jan)</p>
+                    <p id="unlock-date-hint" class="text-[8px] opacity-40 mt-3 tracking-[0.2em] uppercase italic">Terbuka dikala kita usai (17 Jan)</p>
                 </div>
             </div>
         </div>
@@ -136,7 +136,7 @@
         const bgImg = document.getElementById('bgImage');
         
         const targetDate = new Date("Jan 15, 2026 00:00:00").getTime();
-        const payDate = new Date("Jan 16, 2026 00:00:00").getTime();
+        const payDate = new Date("Jan 17, 2026 00:00:00").getTime();
         
         let primo = 0;
         let currentFragment = 1; 
@@ -260,7 +260,7 @@
             const now = new Date().getTime();
             if (now < payDate && !isAdmin) {
                 btn.classList.add('btn-locked');
-                btn.innerText = "Locked Until 16 Jan";
+                btn.innerText = "Locked Until 17 Jan";
             } else {
                 btn.classList.remove('btn-locked');
                 btn.innerText = "Unlock Memory (2000 ✦)";
@@ -270,7 +270,7 @@
         function unlockEaster() {
             const now = new Date().getTime();
             if (now < payDate && !isAdmin) {
-                alert("Sabar... Kenangan ini baru bisa dibuka pada 16 Januari.");
+                alert("Sabar... Kenangan ini baru bisa dibuka pada 17 Januari.");
                 return;
             }
             if (primo >= 2000 || isAdmin) {
@@ -290,4 +290,5 @@
     </script>
 </body>
 </html>
+
 
