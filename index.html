@@ -41,8 +41,7 @@
 
     <div id="admin-area" class="admin-controls hidden">
         <button class="admin-btn" onclick="addPrimo(2000)">Admin: +2000 Primo</button>
-        <button class="admin-btn" onclick="skipIntro()">Admin: Skip Intro</button>
-        <button class="admin-btn !border-blue-500 !bg-blue-900/40" onclick="skipCountdown()">Admin: Skip Lock</button>
+        <button class="admin-btn" onclick="resetProgress()">Admin: Reset Save</button>
     </div>
 
     <div id="main-menu-btn" onclick="toggleMenu()">
@@ -59,19 +58,21 @@
         <button onclick="jumpTo(4)" class="text-[10px] tracking-[0.4em] hover:text-purple-400 text-white/40 uppercase">03. Skyhill Archive</button>
     </div>
 
-    <div id="step-loading" class="full-screen">
-        <p class="serif italic text-2xl tracking-[0.5em] animate-pulse mb-8 uppercase text-center px-6 text-purple-100">The 15/01 Archive</p>
-        <button id="btn-open-arsip" class="btn-action">Buka Arsip</button>
-    </div>
-
-    <div id="video-modal" class="full-screen hidden">
-        <div class="w-[85%] max-w-[380px] aspect-[9/16] bg-[#050308] rounded-[2rem] overflow-hidden border border-purple-500/20 shadow-2xl shadow-purple-900/20">
-            <video id="introVideo" playsinline style="width:100%; height:100%; object-fit:cover;">
-                <source src="video-intro.mp4" type="video/mp4">
-            </video>
+    <div id="intro-container">
+        <div id="step-loading" class="full-screen">
+            <p class="serif italic text-2xl tracking-[0.5em] animate-pulse mb-8 uppercase text-center px-6 text-purple-100">The 15/01 Archive</p>
+            <button id="btn-open-arsip" class="btn-action">Buka Arsip</button>
         </div>
-        <audio id="mainAudio" src="audio-final.mp3"></audio>
-        <button id="btn-play-trigger" class="btn-action bg-white !text-black font-bold mt-10">Mulai Intro</button>
+
+        <div id="video-modal" class="full-screen hidden">
+            <div class="w-[85%] max-w-[380px] aspect-[9/16] bg-[#050308] rounded-[2rem] overflow-hidden border border-purple-500/20 shadow-2xl shadow-purple-900/20">
+                <video id="introVideo" playsinline style="width:100%; height:100%; object-fit:cover;">
+                    <source src="video-intro.mp4" type="video/mp4">
+                </video>
+            </div>
+            <audio id="mainAudio" src="audio-final.mp3"></audio>
+            <button id="btn-play-trigger" class="btn-action bg-white !text-black font-bold mt-10">Mulai Intro</button>
+        </div>
     </div>
 
     <div id="app" class="hidden w-full h-full relative z-10 flex flex-col items-center px-6 pt-24 overflow-y-auto">
@@ -88,7 +89,7 @@
             <div class="w-full aspect-square bg-white/5 rounded-xl overflow-hidden border border-purple-500/10">
                 <img src="map.png" alt="Map" class="w-full h-full object-cover opacity-50">
             </div>
-            <button onclick="jumpTo(2)" class="btn-action w-full">Mulai Fragmen I</button>
+            <button onclick="displayFragment(2)" class="btn-action w-full">Mulai Fragmen I</button>
         </div>
 
         <div id="card-mission-1" class="glass p-10 w-full max-w-sm text-center space-y-6 hidden">
@@ -130,6 +131,7 @@
     </div>
 
     <script>
+        // --- CONFIGURATION ---
         const introVideo = document.getElementById('introVideo');
         const mainAudio = document.getElementById('mainAudio');
         const bgVideo = document.getElementById('bgVideoLoop');
@@ -138,19 +140,57 @@
         const targetDate = new Date("Jan 15, 2026 00:00:00").getTime();
         const payDate = new Date("Jan 17, 2026 00:00:00").getTime();
         
+        // --- STATE VARIABLES ---
         let primo = 0;
         let currentFragment = 1; 
-        let qIdx = 0;
         let isUnlocked = false;
+        let qIdx = 0;
         const qs = ["Apa momen paling tenang hari ini?", "Satu kata untuk perjalanan kita?", "Terima kasih sudah ada di sini."];
 
         const urlParams = new URLSearchParams(window.location.search);
         const isAdmin = urlParams.get('mode') === 'admin';
         if (isAdmin) document.getElementById('admin-area').classList.remove('hidden');
 
+        // --- LOCAL STORAGE SYSTEM (NEW) ---
+        function loadState() {
+            const savedData = localStorage.getItem('archive_1501_save');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                primo = data.primo || 0;
+                currentFragment = data.currentFragment || 1;
+                isUnlocked = data.isUnlocked || false;
+                // Intro skip logic check
+                return data.introWatched === true; 
+            }
+            return false;
+        }
+
+        function saveState(introWatched = true) {
+            const data = {
+                primo: primo,
+                currentFragment: currentFragment,
+                isUnlocked: isUnlocked,
+                introWatched: introWatched
+            };
+            localStorage.setItem('archive_1501_save', JSON.stringify(data));
+            updateUI();
+        }
+
+        function resetProgress() {
+            if(confirm("Reset semua progress?")) {
+                localStorage.removeItem('archive_1501_save');
+                location.reload();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('primo-count').innerText = primo;
+        }
+
+        // --- CORE FUNCTIONS ---
         function addPrimo(amount) {
             primo += amount;
-            document.getElementById('primo-count').innerText = primo;
+            saveState(); // Auto save
             checkPayButton();
         }
 
@@ -161,17 +201,32 @@
 
         document.getElementById('btn-play-trigger').onclick = function() {
             this.style.display = 'none';
-            introVideo.play(); mainAudio.play();
-            introVideo.onended = () => skipIntro();
+            introVideo.play().catch(e => console.log(e)); 
+            mainAudio.play().catch(e => console.log(e));
+            introVideo.onended = () => {
+                skipIntro(true); // True artinya baru saja nonton intro
+            };
         };
 
-        function skipIntro() {
+        function skipIntro(hasWatchedJustNow = false) {
+            // Stop intro elements
             introVideo.pause();
-            document.getElementById('video-modal').classList.add('hidden');
+            document.getElementById('intro-container').classList.add('hidden'); // Sembunyikan seluruh container intro
+            
+            // Show main app
             document.getElementById('app').classList.remove('hidden');
             document.getElementById('primo-display').classList.remove('hidden');
             document.getElementById('main-menu-btn').style.display = 'block';
-            mainAudio.play();
+            
+            // Play background audio pelan
+            mainAudio.volume = 0.5;
+            if(hasWatchedJustNow || currentFragment > 1) {
+                mainAudio.play().catch(() => {});
+            }
+
+            // Simpan bahwa intro sudah dilewati
+            saveState(true);
+            
             checkStatus();
         }
 
@@ -182,6 +237,7 @@
                 setInterval(updateTimer, 1000);
             } else {
                 document.getElementById('lock-screen').style.display = 'none';
+                // Resume ke fragment terakhir yang disimpan
                 displayFragment(currentFragment);
             }
         }
@@ -197,17 +253,25 @@
         }
 
         function verify(id, code) {
+            // Cek apakah sudah pernah selesai fragment ini (prevent farming primo)
+            if (currentFragment > id + 1) {
+                displayFragment(id + 2);
+                return;
+            }
+
             if (document.getElementById('pass-' + id).value.toUpperCase().trim() === code) {
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#a78bfa', '#ffffff'] });
                 addPrimo(500);
                 currentFragment = id + 2; 
-                displayFragment(currentFragment);
+                saveState(); // Save progress
+                setTimeout(() => displayFragment(currentFragment), 1000);
             } else { alert('Kode Salah'); }
         }
 
         function displayFragment(f) {
+            // Logic gate
             if (f === 4 && primo < 1000 && !isAdmin) {
-                alert("✦ Primogems tidak cukup (Butuh 1000).");
+                alert("✦ Primogems tidak cukup (Butuh 1000). Selesaikan misi sebelumnya.");
                 return;
             }
             if (f === 5 && !isUnlocked && !isAdmin) {
@@ -215,16 +279,20 @@
                 return;
             }
 
+            // UI Switching
             document.querySelectorAll('[id^="card-"]').forEach(el => el.classList.add('hidden'));
             const cards = ['card-map', 'card-mission-1', 'card-mission-2', 'card-deep-talk', 'card-easter-egg'];
             if(document.getElementById(cards[f-1])) document.getElementById(cards[f-1]).classList.remove('hidden');
             
+            // Background Switching
             if (f === 1) changeBg('image', 'map.png');
             else if (f === 2) changeBg('video', 'video-zoo.mp4');
             else if (f === 3) changeBg('video', 'video-spa.mp4');
             else if (f === 4 || f === 5) changeBg('video', 'video-dinner.mp4');
 
-            currentFragment = f;
+            // Update tracker variable jika user manual jump via menu
+            if(f > currentFragment) currentFragment = f;
+            saveState(); // Save posisi terakhir
         }
 
         function changeBg(type, src) {
@@ -234,7 +302,7 @@
                 if (type === 'video') {
                     bgVideo.src = src;
                     bgVideo.setAttribute("autoplay", ""); bgVideo.setAttribute("muted", "");
-                    bgVideo.play().then(() => { bgVideo.style.opacity = 0.5; });
+                    bgVideo.play().then(() => { bgVideo.style.opacity = 0.5; }).catch(()=>{});
                 } else {
                     bgImg.src = src;
                     bgImg.style.opacity = 0.5;
@@ -247,7 +315,9 @@
             if (qIdx < qs.length) { 
                 document.getElementById('q-text').innerText = qs[qIdx]; 
             } else {
-                addPrimo(1000); 
+                // Hanya tambah primo jika belum mencapai jumlah maksimal dari quest ini (logic sederhana)
+                if(primo < 1000) addPrimo(1000); 
+                
                 document.getElementById('btn-next-q').classList.add('hidden');
                 document.getElementById('pay-hint').classList.remove('hidden');
                 checkPayButton();
@@ -258,6 +328,15 @@
             const btn = document.getElementById('btn-pay-easter');
             if (!btn) return;
             const now = new Date().getTime();
+            
+            // Jika sudah unlocked, ubah text
+            if(isUnlocked) {
+                btn.classList.remove('btn-locked');
+                btn.innerText = "Memory Unlocked (Open)";
+                btn.onclick = () => displayFragment(5);
+                return;
+            }
+
             if (now < payDate && !isAdmin) {
                 btn.classList.add('btn-locked');
                 btn.innerText = "Locked Until 17 Jan";
@@ -268,6 +347,11 @@
         }
 
         function unlockEaster() {
+            if(isUnlocked) {
+                displayFragment(5);
+                return;
+            }
+
             const now = new Date().getTime();
             if (now < payDate && !isAdmin) {
                 alert("Sabar... Kenangan ini baru bisa dibuka pada 17 Januari.");
@@ -276,6 +360,7 @@
             if (primo >= 2000 || isAdmin) {
                 if(!isAdmin) addPrimo(-2000);
                 isUnlocked = true;
+                saveState(); // PENTING: Save status unlocked
                 confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
                 displayFragment(5);
             } else {
@@ -285,10 +370,20 @@
 
         function toggleMenu() { const m = document.getElementById('side-menu'); m.style.display = (m.style.display === 'flex' ? 'none' : 'flex'); }
         function jumpTo(f) { displayFragment(f); toggleMenu(); }
-        function skipCountdown() { document.getElementById('lock-screen').style.display = 'none'; displayFragment(1); }
-        window.onload = () => { if(isAdmin) checkStatus(); };
+        
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            const hasWatchedIntro = loadState(); // Load save data return true jika intro sudah ditonton
+            updateUI();
+            
+            if (hasWatchedIntro) {
+                // Bypass intro sepenuhnya
+                skipIntro(false); 
+            } else {
+                // User baru / belum nonton intro -> Tampilkan tombol Intro
+                // Default behavior HTML
+            }
+        };
     </script>
 </body>
 </html>
-
-
