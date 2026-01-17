@@ -8,37 +8,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: radial-gradient(circle at center, #1a1025 0%, #050308 100%); 
-            color: #fff; 
-            height: 100vh; 
-            overflow: hidden; 
-            margin: 0; 
-        }
+        body { font-family: 'Inter', sans-serif; background: radial-gradient(circle at center, #1a1025 0%, #050308 100%); color: #fff; height: 100vh; overflow: hidden; margin: 0; }
         .serif { font-family: 'Playfair Display', serif; }
-        
-        /* Background Elements */
         #bgVideoLoop { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0; transition: opacity 1.2s ease-in-out; }
         #bgImage { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; opacity: 0; transition: opacity 1.2s ease-in-out; }
-        
-        /* Containers */
         .full-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; background: #050308; }
         .glass { background: rgba(15, 7, 25, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 2rem; }
-        
-        /* Buttons */
         .btn-action { padding: 1rem 2rem; border-radius: 99px; border: 1px solid rgba(255,255,255,0.15); text-transform: uppercase; font-size: 10px; letter-spacing: 3px; color: white; background: rgba(255,255,255,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .btn-action:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); transform: translateY(-2px); }
         .btn-locked { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
-        
-        /* UI Elements */
         #primo-display { position: fixed; top: 30px; left: 30px; z-index: 400; display: flex; align-items: center; gap: 8px; background: rgba(139, 92, 246, 0.15); padding: 10px 20px; border-radius: 99px; border: 1px solid rgba(139, 92, 246, 0.3); }
         #main-menu-btn { position: fixed; top: 30px; right: 30px; z-index: 400; cursor: pointer; display: none; }
         #side-menu { position: fixed; inset: 0; z-index: 500; background: rgba(5, 3, 8, 0.98); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
-        
-        /* Admin */
-        .admin-controls { position: fixed; bottom: 20px; right: 20px; z-index: 600; display: flex; flex-direction: column; gap: 8px; }
-        .admin-btn { background: rgba(127, 29, 29, 0.6); border: 1px solid #ef4444; color: white; font-size: 7px; padding: 6px 12px; border-radius: 4px; text-transform: uppercase; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -46,11 +27,6 @@
     <div id="primo-display" class="hidden">
         <span style="color: #a78bfa;">✦</span>
         <span id="primo-count" class="text-xs font-bold tracking-widest text-purple-200">0</span>
-    </div>
-
-    <div id="admin-area" class="admin-controls hidden">
-        <button class="admin-btn" onclick="addPrimo(2000)">Admin: +2000 Primo</button>
-        <button class="admin-btn" onclick="resetProgress()">Admin: Reset Save</button>
     </div>
 
     <div id="main-menu-btn" onclick="toggleMenu()">
@@ -88,11 +64,6 @@
         <video id="bgVideoLoop" loop muted playsinline></video>
         <img id="bgImage" src="">
 
-        <div id="lock-screen" class="fixed inset-0 z-[150] bg-black flex flex-col items-center justify-center text-center px-10 hidden">
-            <p class="serif italic text-lg mb-4 opacity-50 text-purple-200">Menuju 15 Januari...</p>
-            <div id="timer" class="serif text-4xl tracking-widest italic mb-2 text-purple-400">00:00:00:00</div>
-        </div>
-
         <div id="card-map" class="glass p-10 w-full max-w-sm text-center space-y-6">
             <p class="text-[9px] opacity-40 uppercase tracking-widest">Archive Map</p>
             <div class="w-full aspect-square bg-white/5 rounded-xl overflow-hidden border border-purple-500/10">
@@ -123,8 +94,7 @@
             <div id="deep-talk-footer" class="space-y-4">
                 <button id="btn-next-q" onclick="nextQuestion()" class="btn-action w-full">Lanjut</button>
                 <div id="pay-hint" class="hidden text-center">
-                    <button id="btn-pay-easter" onclick="unlockEaster()" class="btn-action w-full !bg-purple-600 !border-none font-bold">Unlock Memory (2000 ✦)</button>
-                    <p id="unlock-date-hint" class="text-[8px] opacity-40 mt-3 tracking-[0.2em] uppercase italic">Terbuka dikala kita usai (17 Jan)</p>
+                    <button id="btn-pay-easter" onclick="unlockEaster()" class="btn-action w-full !bg-purple-600 !border-none font-bold">Unlock Memory (1000 ✦)</button>
                 </div>
             </div>
         </div>
@@ -140,78 +110,40 @@
     </div>
 
     <script>
-        // --- CONFIGURATION ---
         const introVideo = document.getElementById('introVideo');
         const mainAudio = document.getElementById('mainAudio');
         const bgVideo = document.getElementById('bgVideoLoop');
         const bgImg = document.getElementById('bgImage');
         
-        // Atur Tanggal
-        const targetDate = new Date("Jan 15, 2026 00:00:00").getTime();
-        const payDate = new Date("Jan 17, 2026 00:00:00").getTime();
-        
-        // --- STATE VARIABLES ---
         let primo = 0;
         let currentFragment = 1; 
         let isUnlocked = false;
         let qIdx = 0;
-        
-        // Daftar Pertanyaan
-        const qs = [
-            "Apa momen paling tenang hari ini?", 
-            "Satu kata untuk perjalanan kita?", 
-            "Terima kasih sudah ada di sini. Siap melangkah?"
-        ];
+        const qs = ["Apa momen paling tenang hari ini?", "Satu kata untuk perjalanan kita?", "Terima kasih sudah ada di sini."];
 
-        // Admin Mode Check
-        const urlParams = new URLSearchParams(window.location.search);
-        const isAdmin = urlParams.get('mode') === 'admin';
-        if (isAdmin) document.getElementById('admin-area').classList.remove('hidden');
-
-        // --- LOCAL STORAGE SYSTEM (Simpan/Load Data) ---
+        // LOAD SAVE
         function loadState() {
-            const savedData = localStorage.getItem('archive_1501_save');
-            if (savedData) {
-                const data = JSON.parse(savedData);
+            const saved = localStorage.getItem('archive_1501_v2');
+            if (saved) {
+                const data = JSON.parse(saved);
                 primo = data.primo || 0;
                 currentFragment = data.currentFragment || 1;
                 isUnlocked = data.isUnlocked || false;
-                return data.introWatched === true; // Mengembalikan true jika intro sudah ditonton
+                return data.introWatched;
             }
             return false;
         }
 
-        function saveState(introWatched = true) {
-            const data = {
-                primo: primo,
-                currentFragment: currentFragment,
-                isUnlocked: isUnlocked,
-                introWatched: introWatched
-            };
-            localStorage.setItem('archive_1501_save', JSON.stringify(data));
-            updateUI();
-        }
-
-        function resetProgress() {
-            if(confirm("Reset semua progress? Data akan hilang.")) {
-                localStorage.removeItem('archive_1501_save');
-                location.reload();
-            }
-        }
-
-        function updateUI() {
+        // SAVE STATE
+        function save(intro = true) {
+            localStorage.setItem('archive_1501_v2', JSON.stringify({
+                primo, currentFragment, isUnlocked, introWatched: intro
+            }));
             document.getElementById('primo-count').innerText = primo;
         }
 
-        // --- CORE FUNCTIONS ---
-        function addPrimo(amount) {
-            primo += amount;
-            saveState(); // Simpan otomatis setiap primo bertambah
-            updateUI();
-            checkPayButton();
-        }
+        function addPrimo(amt) { primo += amt; save(); checkBtn(); }
 
-        // --- INTRO HANDLERS ---
         document.getElementById('btn-open-arsip').onclick = () => {
             document.getElementById('step-loading').classList.add('hidden');
             document.getElementById('video-modal').classList.remove('hidden');
@@ -219,204 +151,93 @@
 
         document.getElementById('btn-play-trigger').onclick = function() {
             this.style.display = 'none';
-            introVideo.play().catch(e => console.log(e)); 
-            mainAudio.play().catch(e => console.log(e));
-            introVideo.onended = () => {
-                skipIntro(true); 
-            };
+            introVideo.play(); mainAudio.play();
+            introVideo.onended = () => skipIntro();
         };
 
-        function skipIntro(hasWatchedJustNow = false) {
-            // Matikan elemen intro
-            introVideo.pause();
-            document.getElementById('intro-container').classList.add('hidden'); 
-            
-            // Munculkan aplikasi utama
+        function skipIntro() {
+            document.getElementById('intro-container').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
             document.getElementById('primo-display').classList.remove('hidden');
             document.getElementById('main-menu-btn').style.display = 'block';
-            
-            // Audio tetap jalan tapi volume turun dikit
-            mainAudio.volume = 0.5;
-            if(hasWatchedJustNow || currentFragment > 1) {
-                mainAudio.play().catch(() => {});
-            }
-
-            // Simpan status
-            saveState(true);
-            checkStatus();
+            mainAudio.play(); mainAudio.volume = 0.5;
+            save(); displayFragment(currentFragment);
         }
 
-        function checkStatus() {
-            const now = new Date().getTime();
-            if (now < targetDate && !isAdmin) {
-                // Masih kekunci tanggal
-                document.getElementById('lock-screen').classList.remove('hidden');
-                setInterval(updateTimer, 1000);
-            } else {
-                // Sudah tanggal 15, buka fragment terakhir
-                document.getElementById('lock-screen').style.display = 'none';
-                displayFragment(currentFragment);
-            }
-        }
-
-        function updateTimer() {
-            const diff = targetDate - new Date().getTime();
-            if (diff <= 0) { location.reload(); return; }
-            const d = Math.floor(diff / 86400000);
-            const h = Math.floor((diff % 86400000) / 3600000);
-            const m = Math.floor((diff % 3600000) / 60000);
-            const s = Math.floor((diff % 60000) / 1000);
-            document.getElementById('timer').innerText = `${d}d ${h}h ${m}m ${s}s`;
-        }
-
-        // --- GAMEPLAY LOGIC ---
         function verify(id, code) {
-            // Mencegah user menjawab ulang untuk farming poin
-            if (currentFragment > id + 1) {
-                displayFragment(id + 2);
-                return;
-            }
-
             if (document.getElementById('pass-' + id).value.toUpperCase().trim() === code) {
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#a78bfa', '#ffffff'] });
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                 addPrimo(500);
                 currentFragment = id + 2; 
-                saveState(); 
                 setTimeout(() => displayFragment(currentFragment), 1000);
             } else { alert('Kode Salah'); }
         }
 
         function displayFragment(f) {
-            // Cek apakah punya cukup primo untuk Skyhill Archive (Butuh 1000)
-            if (f === 4 && primo < 1000 && !isAdmin) {
-                alert("✦ Primogems tidak cukup (Butuh 1000). Selesaikan misi sebelumnya.");
-                return;
-            }
-            // Cek apakah Memory sudah di-unlock (Fragmen 5)
-            if (f === 5 && !isUnlocked && !isAdmin) {
-                alert("✦ Memory terkunci. Selesaikan Deep Talk dan Unlock Memory.");
-                return;
-            }
-
-            // Ganti Tampilan Card
             document.querySelectorAll('[id^="card-"]').forEach(el => el.classList.add('hidden'));
             const cards = ['card-map', 'card-mission-1', 'card-mission-2', 'card-deep-talk', 'card-easter-egg'];
-            if(document.getElementById(cards[f-1])) document.getElementById(cards[f-1]).classList.remove('hidden');
+            document.getElementById(cards[f-1]).classList.remove('hidden');
             
-            // Ganti Background
             if (f === 1) changeBg('image', 'map.png');
             else if (f === 2) changeBg('video', 'video-zoo.mp4');
             else if (f === 3) changeBg('video', 'video-spa.mp4');
-            else if (f === 4 || f === 5) changeBg('video', 'video-dinner.mp4');
+            else changeBg('video', 'video-dinner.mp4');
 
-            // Update progress track
-            if(f > currentFragment) currentFragment = f;
-            
-            // Pastikan tombol unlock dicek statusnya saat masuk fragmen 4
-            if (f === 4) checkPayButton();
-            
-            saveState();
+            currentFragment = f; save(); checkBtn();
         }
 
         function changeBg(type, src) {
-            bgVideo.style.opacity = 0;
-            bgImg.style.opacity = 0;
+            bgVideo.style.opacity = 0; bgImg.style.opacity = 0;
             setTimeout(() => {
                 if (type === 'video') {
-                    bgVideo.src = src;
-                    bgVideo.setAttribute("autoplay", ""); bgVideo.setAttribute("muted", "");
-                    bgVideo.play().then(() => { bgVideo.style.opacity = 0.5; }).catch(()=>{});
+                    bgVideo.src = src; bgVideo.play(); bgVideo.style.opacity = 0.5;
                 } else {
-                    bgImg.src = src;
-                    bgImg.style.opacity = 0.5;
+                    bgImg.src = src; bgImg.style.opacity = 0.5;
                 }
-            }, 800);
+            }, 500);
         }
 
-        // --- DEEP TALK LOGIC ---
         function nextQuestion() {
             qIdx++;
             if (qIdx < qs.length) { 
                 document.getElementById('q-text').innerText = qs[qIdx]; 
             } else {
-                // BUG FIX: Hapus batasan "if (primo < 1000)"
-                // Jika user belum punya 2000, tambah 1000.
-                if (primo < 2000) {
-                    addPrimo(1000); 
-                }
-                
                 document.getElementById('btn-next-q').classList.add('hidden');
                 document.getElementById('pay-hint').classList.remove('hidden');
-                checkPayButton();
             }
         }
 
-        function checkPayButton() {
+        function checkBtn() {
             const btn = document.getElementById('btn-pay-easter');
             if (!btn) return;
-            const now = new Date().getTime();
-            
-            // 1. Jika sudah pernah unlock
-            if(isUnlocked) {
-                btn.classList.remove('btn-locked');
-                btn.innerText = "Memory Unlocked (Open)";
+            if (isUnlocked) {
+                btn.innerText = "OPEN MEMORY";
                 btn.onclick = () => displayFragment(5);
-                return;
-            }
-
-            // 2. Cek Tanggal (17 Jan)
-            if (now < payDate && !isAdmin) {
-                btn.classList.add('btn-locked');
-                btn.innerText = "Locked Until 17 Jan";
-            } else {
-                // 3. Tanggal sudah oke, cek Primo
+            } else if (primo >= 1000) {
                 btn.classList.remove('btn-locked');
-                if (primo >= 2000) {
-                     btn.innerText = "Unlock Memory (2000 ✦)";
-                } else {
-                     btn.innerText = `Need 2000 ✦ (You have ${primo})`;
-                     btn.classList.add('btn-locked'); // Kunci visual kalau duit kurang
-                }
+                btn.innerText = "Unlock Memory (1000 ✦)";
+            } else {
+                btn.classList.add('btn-locked');
+                btn.innerText = `Need 1000 ✦ (${primo}/1000)`;
             }
         }
 
         function unlockEaster() {
-            if(isUnlocked) {
+            if (primo >= 1000) {
+                if (!isUnlocked) primo -= 1000;
+                isUnlocked = true; save();
+                confetti({ particleCount: 200, spread: 100 });
                 displayFragment(5);
-                return;
-            }
-
-            const now = new Date().getTime();
-            if (now < payDate && !isAdmin) {
-                alert("Sabar... Kenangan ini baru bisa dibuka pada 17 Januari.");
-                return;
-            }
-            
-            if (primo >= 2000 || isAdmin) {
-                if(!isAdmin) addPrimo(-2000); // Kurangi primo
-                isUnlocked = true;
-                saveState(); // SAVE STATUS UNLOCKED
-                confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
-                displayFragment(5);
-            } else {
-                alert(`✦ Primogems kamu belum cukup (Butuh 2000, Punya ${primo}).`);
             }
         }
 
         function toggleMenu() { const m = document.getElementById('side-menu'); m.style.display = (m.style.display === 'flex' ? 'none' : 'flex'); }
         function jumpTo(f) { displayFragment(f); toggleMenu(); }
-        
-        // --- INITIALIZATION ---
+
         window.onload = () => {
-            // Load data dari storage saat web dibuka
-            const hasWatchedIntro = loadState(); 
-            updateUI();
-            
-            // Jika user pernah nonton intro, langsung skip ke App
-            if (hasWatchedIntro) {
-                skipIntro(false); 
-            }
+            const watched = loadState();
+            document.getElementById('primo-count').innerText = primo;
+            if (watched) skipIntro();
         };
     </script>
 </body>
